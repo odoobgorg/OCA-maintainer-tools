@@ -40,7 +40,8 @@ section.
         * [No SQL Injection](#no-sql-injection)
         * [Never commit the transaction](#never-commit-the-transaction)
       * [Do not bypass the ORM](#do-not-bypass-the-orm)
-      * [Field](#field)
+      * [Models](#models)
+      * [Fields](#fields)
     * [Javascript](#javascript)
     * [CSS](#css)
     * [Tests](#tests)
@@ -420,14 +421,17 @@ An entry in `python` needs to be in `PYTHONPATH`, check by running
 `python -c "import external_dependency_python_N"`.
 
 #### ImportError
-In python files where you use `import external_dependency_python_N` you will
+In python files where you use external dependencies you will
 need to add `try-except` with a debug log.
 
 ```python
 try:
-  import external_dependency_python_N
-except ImportError:
-  _logger.debug('Cannot `import external_dependency_python_N`.')
+    import external_dependency_python_N
+    import external_dependency_python_M
+    EXTERNAL_DEPENDENCY_BINARY_N_PATH = tools.find_in_path('external_dependency_binary_N')
+    EXTERNAL_DEPENDENCY_BINARY_M_PATH = tools.find_in_path('external_dependency_binary_M')
+except (ImportError, IOError) as err:
+    _logger.debug(err)
 ```
 This rule doesn't apply to the test files since these files are loaded only when
 running tests and in such a case your module and their external dependencies are installed.
@@ -718,18 +722,10 @@ auction_lots_ids = self.search(cr, uid, [
 ])
 ```
 
-### Field
-* `One2Many` and `Many2Many` fields should always have `_ids` as suffix
-  (example: sale_order_line_ids)
-* `Many2One` fields should have `_id` as suffix
-  (example: partner_id, user_id, ...)
-* If the technical name of the field (the variable name) is the same to the
-  string of the label, don't put `string` parameter for new API fields, because
-  it's automatically taken. If your variable name contains "_" in the name,
-  they are converted to spaces when creating the automatic string and each word
-  is capitalized.
-  (example: old api `'name': fields.char('Name', ...)`
-            new api `'name': fields.Char(...)`)
+### Models
+* Model names
+    * Use dot lowercase name for models. Example: `sale.order`
+    * Use name in a singular form. `sale.order` instead of `sale.orders`
 * Method conventions
     * Compute Field: the compute method pattern is `_compute_<field_name>`
     * Inverse method: the inverse method pattern is `_inverse_<field_name>`
@@ -743,15 +739,6 @@ auction_lots_ids = self.search(cr, uid, [
       `self.ensure_one()` at the beginning of the method.
     * `@api.one` method: For v8 is recommended use `@api.multi` and avoid use
       `@api.one`, for compatibility with v9 where is deprecated `@api.one`.
-
-* Default functions should be declared with a lambda call on self. The reason
-  for this is so a default function can be inherited. Assigning a function
-  pointer directly to the `default` parameter does not allow for inheritance.
-
-  ```python
-  a_field(..., default=lambda self: self._default_get())
-  ```
-
 * In a Model attribute order should be
     1. Private attributes (`_name`, `_description`, `_inherit`, ...)
     2. Default method and `_default_get`
@@ -820,6 +807,27 @@ class Event(models.Model):
     def mail_user_confirm(self):
         ...
 ```
+
+
+### Fields
+* `One2Many` and `Many2Many` fields should always have `_ids` as suffix
+  (example: sale_order_line_ids)
+* `Many2One` fields should have `_id` as suffix
+  (example: partner_id, user_id, ...)
+* If the technical name of the field (the variable name) is the same to the
+  string of the label, don't put `string` parameter for new API fields, because
+  it's automatically taken. If your variable name contains "_" in the name,
+  they are converted to spaces when creating the automatic string and each word
+  is capitalized.
+  (example: old api `'name': fields.char('Name', ...)`
+            new api `'name': fields.Char(...)`)
+* Default functions should be declared with a lambda call on self. The reason
+  for this is so a default function can be inherited. Assigning a function
+  pointer directly to the `default` parameter does not allow for inheritance.
+
+  ```python
+  a_field(..., default=lambda self: self._default_get())
+  ```
 
 ## Javascript
 
